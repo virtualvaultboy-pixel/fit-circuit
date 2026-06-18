@@ -77,7 +77,7 @@
   .stage-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
   .media{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;border:1px solid var(--line);
          background:radial-gradient(120% 120% at 50% 20%,#1b2530,#0d1218);max-height:48vh}
-  .media iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:#000}
+  .media #exImg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#f4f5f7;display:none}
   .scene{position:absolute;inset:0}
   .cd{position:absolute;left:12px;top:10px;font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;
       padding:2px 12px;border-radius:14px;background:rgba(10,14,20,.55);backdrop-filter:blur(4px);color:#fff;text-shadow:0 2px 8px #000}
@@ -112,7 +112,7 @@
   /* ===== FIGURE (animation de secours) ===== */
   .stage{position:absolute;inset:0;transition:transform .35s ease}
   .stage.floor{transform:rotate(90deg) translateY(-4%)}
-  .fig{position:absolute;left:50%;top:50%;width:26%;height:70%;transform:translate(-50%,-50%)}
+  .fig{position:absolute;left:50%;top:50%;width:34%;height:82%;transform:translate(-50%,-50%)}
   .fig>div{position:absolute;background:var(--accent);border-radius:40px;transition:background .3s}
   .head{top:0;left:50%;width:60%;height:0;padding-bottom:60%;margin-left:-30%;border-radius:50%}
   .torso{top:30%;left:50%;width:24%;height:35%;margin-left:-12%}
@@ -235,7 +235,7 @@
 
   <div class="stage-wrap" id="stageWrap">
     <div class="media">
-      <iframe id="ytf" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+      <img id="exImg" alt="">
       <div class="scene"><div class="stage" id="stage">
         <div class="fig" id="fig">
           <div class="head"></div><div class="torso"></div>
@@ -244,8 +244,6 @@
         </div>
       </div></div>
       <div class="cd" id="count">0</div>
-      <button class="mtoggle" id="mtoggle" onclick="toggleMedia()">📺</button>
-      <a class="ytlink" id="ytlink" target="_blank" rel="noopener">YouTube ↗</a>
     </div>
 
     <div class="now"><div class="nm" id="exName">—</div><div class="tg" id="exTarget"></div></div>
@@ -263,34 +261,25 @@
 
 <script>
 /* ---------- VIDÉOS DE DÉMO (YouTube) ---------- */
-const YT = {
-  jumpingjacks:'6zi5Olw5BYQ',
-  squat:'P-yaD24bUE8',
-  pushup:'WDIpL0pjun0',
-  burpee:'qLBImHhCXSw',
-  lunge:'_GqxkGp7NAA',
-  mountain:'5NeRyDGAT_M',
-  superman:'LZoWdePF1NQ',
-  plank:'mwlp75MS6Rg',
-  armcircle:null, shadowbox:null, stretch:null
-};
+const IMG_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
 
 /* ---------- PROGRAMME ---------- */
+/* img = vraie illustration animée (début↔fin) ; sinon animation dessinée */
 const WARMUP = [
   {nm:'Jumping jacks',   tg:'1 min · ou course sur place', dur:60, a:'jumpingjacks'},
-  {nm:'Squats lents',    tg:'10 reps · corps vide',        dur:40, a:'squat'},
-  {nm:'Pompes lentes',   tg:'8 reps · genoux si besoin',   dur:40, a:'pushup', floor:1},
-  {nm:'Cercles de bras', tg:'30s + rotation hanches',      dur:50, a:'armcircle'},
-  {nm:'Fentes marchées', tg:'good mornings sans poids',    dur:60, a:'lunge'},
+  {nm:'Squats lents',    tg:'10 reps · corps vide',        dur:40, a:'squat',     img:'Bodyweight_Squat'},
+  {nm:'Pompes lentes',   tg:'8 reps · genoux si besoin',   dur:40, a:'pushup',    floor:1, img:'Pushups'},
+  {nm:'Cercles de bras', tg:'30s + rotation hanches',      dur:50, a:'armcircle', img:'Arm_Circles'},
+  {nm:'Fentes marchées', tg:'good mornings sans poids',    dur:60, a:'lunge',     img:'Bodyweight_Walking_Lunge'},
 ];
 const CIRCUIT = [
   {nm:'Burpees',           tg:'8-10 reps',      dur:40, a:'burpee'},
-  {nm:'Pompes',            tg:'10-15 reps',     dur:38, a:'pushup',   floor:1},
-  {nm:'Squats',            tg:'15-20 reps',     dur:42, a:'squat'},
-  {nm:'Fentes marchées',   tg:'10 / jambe',     dur:42, a:'lunge'},
-  {nm:'Mountain climbers', tg:'30-40 secondes', dur:35, a:'mountain', floor:1},
-  {nm:'Superman',          tg:'12-15 reps',     dur:32, a:'superman', floor:1},
-  {nm:'Planche',           tg:'30-60 secondes', dur:45, a:'plank',    floor:1},
+  {nm:'Pompes',            tg:'10-15 reps',     dur:38, a:'pushup',   floor:1, img:'Pushups'},
+  {nm:'Squats',            tg:'15-20 reps',     dur:42, a:'squat',    img:'Bodyweight_Squat'},
+  {nm:'Fentes marchées',   tg:'10 / jambe',     dur:42, a:'lunge',    img:'Bodyweight_Walking_Lunge'},
+  {nm:'Mountain climbers', tg:'30-40 secondes', dur:35, a:'mountain', floor:1, img:'Mountain_Climbers'},
+  {nm:'Superman',          tg:'12-15 reps',     dur:32, a:'superman', floor:1, img:'Superman'},
+  {nm:'Planche',           tg:'30-60 secondes', dur:45, a:'plank',    floor:1, img:'Plank'},
 ];
 const FINISH = [
   {nm:'Shadow boxing', tg:'léger · ou high knees',                    dur:90, a:'shadowbox'},
@@ -347,30 +336,23 @@ const $=id=>document.getElementById(id);
 
 function startWorkout(){ steps=buildSteps(); idx=0; document.body.classList.add('run'); requestWake(); loadStep(0); play(); }
 
-function ytEmbed(id){ return 'https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&mute=1&loop=1&playlist='+id+'&controls=1&rel=0&playsinline=1&modestbranding=1'; }
+let imgTimer=null, imgFrame=0;
+function stopImg(){ if(imgTimer){ clearInterval(imgTimer); imgTimer=null; } }
 function setFig(e){ $('fig').className='fig'+(e?' ex-'+e.a:''); $('stage').className='stage'+(e&&e.floor?' floor':''); }
-function clearVideo(){ $('ytf').src=''; $('ytf').style.display='none'; $('scene')&&($('scene').style.display='block'); }
-
-function showMedia(e, isWork){
-  const sc=document.querySelector('.scene');
-  const id = e?YT[e.a]:null;
-  if(isWork && S.media==='video' && id){
-    sc.style.display='none';
-    $('ytf').style.display='block'; $('ytf').src=ytEmbed(id);
-    $('mtoggle').textContent='🏃'; $('mtoggle').style.display='block';
-    $('ytlink').style.display='block'; $('ytlink').href='https://youtu.be/'+id;
+function showFig(e){ stopImg(); $('exImg').style.display='none'; document.querySelector('.scene').style.display='block'; setFig(e); }
+function showMedia(e){
+  stopImg();
+  const sc=document.querySelector('.scene'), el=$('exImg');
+  if(e && e.img){
+    imgFrame=0;
+    const base=IMG_BASE+e.img+'/';
+    el.onerror=()=>{ showFig(e); };          // image indispo → animation dessinée
+    el.style.display='block'; sc.style.display='none';
+    el.src=base+'0.jpg';
+    imgTimer=setInterval(()=>{ imgFrame^=1; el.src=base+imgFrame+'.jpg'; },700);
   } else {
-    $('ytf').src=''; $('ytf').style.display='none';
-    sc.style.display='block'; setFig(e);
-    $('mtoggle').textContent = id?'📺':'🔎';
-    $('mtoggle').style.display = isWork?'block':'none';
-    $('ytlink').style.display='block';
-    $('ytlink').href = id ? 'https://youtu.be/'+id : 'https://www.youtube.com/results?search_query='+encodeURIComponent((e?e.nm:'')+' exercice technique');
+    showFig(e);
   }
-}
-function toggleMedia(){
-  S.media = S.media==='video'?'anim':'video'; save();
-  const st=steps[idx]; if(st&&st.kind==='work') showMedia(st.e,true);
 }
 
 function loadStep(i){
@@ -381,20 +363,20 @@ function loadStep(i){
   if(st.kind==='go'){
     dur=st.dur; chip.textContent="C'est parti"; roundLbl.textContent='Prépare-toi';
     exName.textContent='En position…'; exTarget.textContent=''; nextUp.innerHTML='';
-    showMedia(CIRCUIT[0],false); $('mtoggle').style.display='none';
+    showMedia(CIRCUIT[0]);
   } else if(st.kind==='work'){
     dur=st.e.dur;
     chip.textContent = st.phase==='circuit'?'Circuit':st.phase;
     roundLbl.textContent = st.round?'Tour '+st.round+' / '+S.rounds:'';
     exName.textContent=st.e.nm; exTarget.textContent=st.e.tg;
     const nx=findNext(i); nextUp.innerHTML = nx?'Ensuite : <b>'+nx.nm+'</b>':'';
-    showMedia(st.e,true);
+    showMedia(st.e);
   } else {
     dur=st.dur; chip.textContent='Repos';
     roundLbl.textContent = st.roundDone?'Tour '+st.roundDone+' terminé 🔥':(st.round?'Tour '+st.round+' / '+S.rounds:(st.phase||''));
     exName.textContent='Récupération'; exTarget.textContent='';
     nextUp.innerHTML = st.next?'À suivre : <b>'+st.next.nm+'</b> — '+st.next.tg:'';
-    showMedia(st.next,false);
+    showMedia(st.next);
   }
   rem=dur; $('count').textContent=fmt(rem); updateBar(); progress();
 }
@@ -422,14 +404,14 @@ function goNext(){ if(idx+1<steps.length) loadStep(idx+1); }
 function goPrev(){ if(rem<dur-1) loadStep(idx); else if(idx>0) loadStep(idx-1); }
 
 function finishWorkout(){
-  pause(); clearInterval(pInt); releaseWake(); clearVideo();
+  pause(); clearInterval(pInt); releaseWake(); stopImg();
   beep(523,150); setTimeout(()=>beep(659,150),160); setTimeout(()=>beep(784,260),330);
   $('stageWrap').innerHTML='<div class="done"><div class="em">💪</div><h2>Séance terminée !</h2>'
     +'<p>Bien joué. Hydrate-toi, mange tes protéines, dors.</p>'
     +'<button class="btn" onclick="quit()">Retour</button></div>';
   chip.textContent='Terminé'; roundLbl.textContent='';
 }
-function quit(){ $('ytf').src=''; location.reload(); }
+function quit(){ stopImg(); location.reload(); }
 
 /* ---------- helpers ---------- */
 function setAccent(mode){
