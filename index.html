@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FitCircuit">
+<title>FitCircuit — Séance Bodyweight</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:#171c24; --card2:#1f2630; --line:#2a323d;
+    --txt:#eef2f7; --muted:#90a0b3;
+    --work:#ff7a3c; --work2:#ff5e62;
+    --rest:#23c5b6; --rest2:#1d9bd6;
+    --accent:var(--work);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(120% 100% at 50% 0%,#141b25 0%,var(--bg) 55%);
+    color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;min-height:100%;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:18px 16px calc(28px + env(safe-area-inset-bottom));}
+  h1{font-size:24px;margin:6px 0 2px;letter-spacing:-.5px}
+  h1 span{color:var(--work)}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin:0 0 12px;font-weight:700}
+
+  .exlist{display:flex;flex-direction:column;gap:8px}
+  .exrow{display:flex;align-items:center;gap:12px;background:var(--card2);border-radius:12px;padding:9px 12px}
+  .exrow .nm{font-weight:600;font-size:15px}
+  .exrow .tg{color:var(--muted);font-size:12.5px}
+  .tag{margin-left:auto;font-size:11px;color:var(--muted);background:#10151c;border:1px solid var(--line);padding:3px 8px;border-radius:20px;white-space:nowrap}
+
+  .set{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line)}
+  .set:last-child{border-bottom:0}
+  .set .lab{font-size:14.5px}
+  .set .lab small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+  .stepper{display:flex;align-items:center;gap:14px}
+  .stepper button{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:20px;line-height:1;cursor:pointer}
+  .stepper b{min-width:26px;text-align:center;font-size:17px}
+  input[type=range]{width:150px;accent-color:var(--work)}
+  .val{font-variant-numeric:tabular-nums;color:var(--work);font-weight:700;min-width:46px;text-align:right}
+  .switch{position:relative;width:48px;height:28px}
+  .switch input{display:none}
+  .switch span{position:absolute;inset:0;background:var(--card2);border:1px solid var(--line);border-radius:20px;transition:.2s}
+  .switch span:before{content:"";position:absolute;width:22px;height:22px;border-radius:50%;background:#6b7888;top:2px;left:2px;transition:.2s}
+  .switch input:checked + span{background:rgba(255,122,60,.25);border-color:var(--work)}
+  .switch input:checked + span:before{transform:translateX(20px);background:var(--work)}
+
+  .est{display:flex;justify-content:space-between;align-items:baseline;margin:4px 2px 16px}
+  .est .big{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+  .est small{color:var(--muted)}
+  .btn{display:block;width:100%;border:0;border-radius:16px;padding:17px;font-size:17px;font-weight:800;letter-spacing:.3px;cursor:pointer;color:#11161d;
+       background:linear-gradient(90deg,var(--work),var(--work2));box-shadow:0 10px 26px -10px var(--work)}
+  .btn:active{transform:translateY(1px)}
+
+  /* ---- player ---- */
+  #player{display:none;position:fixed;inset:0;z-index:10;flex-direction:column;
+          background:radial-gradient(120% 80% at 50% 0%,#16202b 0%,var(--bg) 60%);
+          padding:calc(12px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));}
+  body.run #player{display:flex}
+  body.run{overflow:hidden}
+  .ptop{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .chip{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:6px 12px;border-radius:20px;
+        background:rgba(255,122,60,.16);color:var(--work);border:1px solid rgba(255,122,60,.35)}
+  body.resting .chip{background:rgba(35,197,182,.16);color:var(--rest);border-color:rgba(35,197,182,.35)}
+  .rl{font-size:12.5px;color:var(--muted)}
+  .quit{margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted);border-radius:10px;width:38px;height:38px;font-size:17px;cursor:pointer}
+
+  .stage-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .media{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;border:1px solid var(--line);
+         background:radial-gradient(120% 120% at 50% 20%,#1b2530,#0d1218);max-height:48vh}
+  .media iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:#000}
+  .scene{position:absolute;inset:0}
+  .cd{position:absolute;left:12px;top:10px;font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;
+      padding:2px 12px;border-radius:14px;background:rgba(10,14,20,.55);backdrop-filter:blur(4px);color:#fff;text-shadow:0 2px 8px #000}
+  .mtoggle{position:absolute;right:10px;top:10px;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);
+           background:rgba(10,14,20,.55);backdrop-filter:blur(4px);color:#fff;font-size:18px;cursor:pointer}
+  .ytlink{position:absolute;right:10px;bottom:10px;font-size:12px;color:#fff;background:rgba(10,14,20,.55);backdrop-filter:blur(4px);
+          border:1px solid var(--line);padding:5px 10px;border-radius:20px;text-decoration:none}
+
+  .now{text-align:center;margin-top:12px}
+  .now .nm{font-size:25px;font-weight:800;letter-spacing:-.3px}
+  .now .tg{color:var(--muted);font-size:14px;margin-top:3px}
+  .next{color:var(--muted);font-size:12.5px;text-align:center;margin-top:8px;height:17px}
+  .next b{color:var(--txt)}
+
+  .tbar{height:8px;border-radius:8px;background:#222b35;overflow:hidden;margin:14px 2px 8px}
+  .tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--accent),var(--accent));transition:width .95s linear}
+  .pbar{height:5px;border-radius:6px;background:#1a212b;overflow:hidden;margin:0 2px 12px}
+  .pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--work),var(--rest));transition:width .4s}
+
+  .ctrls{display:flex;align-items:center;justify-content:center;gap:18px}
+  .ctrls button{border:1px solid var(--line);background:var(--card);color:var(--txt);border-radius:50%;cursor:pointer}
+  .nav{width:58px;height:58px;font-size:21px}
+  .play{width:82px;height:82px;font-size:29px;background:linear-gradient(135deg,var(--work),var(--work2));border:0;color:#11161d;box-shadow:0 12px 30px -12px var(--work)}
+  body.resting .play{background:linear-gradient(135deg,var(--rest),var(--rest2));box-shadow:0 12px 30px -12px var(--rest)}
+  .ctrls button:active{transform:scale(.94)}
+
+  .done{text-align:center;padding:26px 10px}
+  .done .em{font-size:54px}
+  .done h2{font-size:24px;margin:8px 0 4px}
+  .done p{color:var(--muted);margin:0 0 20px}
+
+  /* ===== FIGURE (animation de secours) ===== */
+  .stage{position:absolute;inset:0;transition:transform .35s ease}
+  .stage.floor{transform:rotate(90deg) translateY(-4%)}
+  .fig{position:absolute;left:50%;top:50%;width:26%;height:70%;transform:translate(-50%,-50%)}
+  .fig>div{position:absolute;background:var(--accent);border-radius:40px;transition:background .3s}
+  .head{top:0;left:50%;width:60%;height:0;padding-bottom:60%;margin-left:-30%;border-radius:50%}
+  .torso{top:30%;left:50%;width:24%;height:35%;margin-left:-12%}
+  .armL,.armR{top:33%;width:18%;height:34%;transform-origin:top center}
+  .armL{left:24%;transform:rotate(26deg)}
+  .armR{left:58%;transform:rotate(-26deg)}
+  .legL,.legR{top:63%;width:20%;height:37%;transform-origin:top center}
+  .legL{left:34%;transform:rotate(8deg)}
+  .legR{left:46%;transform:rotate(-8deg)}
+  @keyframes bob{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-58%)}}
+  .ex-jumpingjacks{animation:bob .5s infinite}
+  .ex-jumpingjacks .armL{animation:jjAL .5s infinite}.ex-jumpingjacks .armR{animation:jjAR .5s infinite}
+  .ex-jumpingjacks .legL{animation:jjLL .5s infinite}.ex-jumpingjacks .legR{animation:jjLR .5s infinite}
+  @keyframes jjAL{0%,100%{transform:rotate(26deg)}50%{transform:rotate(162deg)}}
+  @keyframes jjAR{0%,100%{transform:rotate(-26deg)}50%{transform:rotate(-162deg)}}
+  @keyframes jjLL{0%,100%{transform:rotate(8deg)}50%{transform:rotate(30deg)}}
+  @keyframes jjLR{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(-30deg)}}
+  .ex-squat{animation:squatB 1.5s infinite}
+  @keyframes squatB{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-38%)}}
+  .ex-squat .armL{animation:afL 1.5s infinite}.ex-squat .armR{animation:afR 1.5s infinite}
+  @keyframes afL{0%,100%{transform:rotate(26deg)}50%{transform:rotate(92deg)}}
+  @keyframes afR{0%,100%{transform:rotate(-26deg)}50%{transform:rotate(-92deg)}}
+  .ex-squat .legL{animation:sqLL 1.5s infinite}.ex-squat .legR{animation:sqLR 1.5s infinite}
+  @keyframes sqLL{0%,100%{transform:rotate(8deg)}50%{transform:rotate(19deg)}}
+  @keyframes sqLR{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(-19deg)}}
+  .ex-pushup{animation:push 1.3s infinite}
+  @keyframes push{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-43%,-50%)}}
+  .ex-pushup .armL{transform:rotate(150deg)}.ex-pushup .armR{transform:rotate(-150deg)}
+  .ex-plank{animation:plank 2.4s infinite}
+  @keyframes plank{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-48%,-50%)}}
+  .ex-plank .armL{transform:rotate(150deg)}.ex-plank .armR{transform:rotate(-150deg)}
+  .ex-superman{animation:sup 1.8s infinite}
+  @keyframes sup{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-46%)}}
+  .ex-superman .armL{animation:supA 1.8s infinite}.ex-superman .armR{animation:supA 1.8s infinite}
+  @keyframes supA{0%,100%{transform:rotate(150deg)}50%{transform:rotate(176deg)}}
+  .ex-superman .legL{animation:supLL 1.8s infinite}.ex-superman .legR{animation:supLR 1.8s infinite}
+  @keyframes supLL{0%,100%{transform:rotate(8deg)}50%{transform:rotate(-12deg)}}
+  @keyframes supLR{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(12deg)}}
+  .ex-mountain .legL{animation:mtL .5s infinite}.ex-mountain .legR{animation:mtR .5s infinite}
+  @keyframes mtL{0%,100%{transform:rotate(8deg)}50%{transform:rotate(64deg)}}
+  @keyframes mtR{0%,100%{transform:rotate(64deg)}50%{transform:rotate(-8deg)}}
+  .ex-mountain .armL{transform:rotate(150deg)}.ex-mountain .armR{transform:rotate(-150deg)}
+  .ex-burpee{animation:burp 1.9s infinite}
+  @keyframes burp{0%{transform:translate(-50%,-50%)}22%{transform:translate(-50%,-36%)}46%{transform:translate(-50%,-36%)}64%{transform:translate(-50%,-66%)}100%{transform:translate(-50%,-50%)}}
+  .ex-burpee .armL{animation:bpA 1.9s infinite}.ex-burpee .armR{animation:bpAr 1.9s infinite}
+  @keyframes bpA{0%,100%{transform:rotate(26deg)}46%{transform:rotate(80deg)}64%{transform:rotate(165deg)}}
+  @keyframes bpAr{0%,100%{transform:rotate(-26deg)}46%{transform:rotate(-80deg)}64%{transform:rotate(-165deg)}}
+  .ex-lunge{animation:lungeB 1.8s infinite}
+  @keyframes lungeB{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-42%)}}
+  .ex-lunge .legL{animation:luL 1.8s infinite}.ex-lunge .legR{animation:luR 1.8s infinite}
+  @keyframes luL{0%,100%{transform:rotate(8deg)}50%{transform:rotate(42deg)}}
+  @keyframes luR{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(-42deg)}}
+  .ex-shadowbox{animation:bxB .42s infinite}
+  @keyframes bxB{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-53%)}}
+  .ex-shadowbox .armL{animation:pnL .8s infinite}.ex-shadowbox .armR{animation:pnR .8s infinite}
+  @keyframes pnL{0%,100%{transform:rotate(40deg)}30%{transform:rotate(100deg)}}
+  @keyframes pnR{0%,100%,30%{transform:rotate(-40deg)}65%{transform:rotate(-100deg)}}
+  .ex-armcircle .armL{animation:cirL 1.5s linear infinite}.ex-armcircle .armR{animation:cirR 1.5s linear infinite}
+  @keyframes cirL{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  @keyframes cirR{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+  .ex-stretch{animation:sway 3s ease-in-out infinite}
+  @keyframes sway{0%,100%{transform:translate(-50%,-50%) rotate(-5deg)}50%{transform:translate(-50%,-50%) rotate(5deg)}}
+  .ex-stretch .armL{animation:reach 3s ease-in-out infinite}
+  @keyframes reach{0%,100%{transform:rotate(26deg)}50%{transform:rotate(168deg)}}
+</style>
+</head>
+<body>
+
+<!-- ======= HOME ======= -->
+<div class="wrap" id="home">
+  <h1><span>Fit</span>Circuit</h1>
+  <p class="sub">Bodyweight — Circuit HIIT/force · 3×/semaine · sans matériel · vidéo de démo par exo</p>
+
+  <div class="est">
+    <div><div class="big" id="estTime">--</div><small id="estDesc">durée estimée</small></div>
+    <button class="btn" style="width:auto;padding:16px 26px" onclick="startWorkout()">Démarrer ▶</button>
+  </div>
+
+  <div class="card">
+    <h2>Réglages</h2>
+    <div class="set">
+      <div class="lab">Tours du circuit <small>nombre de fois que tu enchaînes les 7 exos</small></div>
+      <div class="stepper"><button onclick="bump(-1)">−</button><b id="vRounds">4</b><button onclick="bump(1)">+</button></div>
+    </div>
+    <div class="set">
+      <div class="lab">Repos entre exercices</div>
+      <div class="stepper"><span class="val" id="vRestEx">30s</span><input type="range" min="10" max="60" step="5" id="restEx" oninput="onRange()"></div>
+    </div>
+    <div class="set">
+      <div class="lab">Repos entre tours</div>
+      <div class="stepper"><span class="val" id="vRestRd">75s</span><input type="range" min="30" max="150" step="15" id="restRd" oninput="onRange()"></div>
+    </div>
+    <div class="set">
+      <div class="lab">Échauffement <small>5 min de mise en route</small></div>
+      <label class="switch"><input type="checkbox" id="warm" checked onchange="recalc()"><span></span></label>
+    </div>
+    <div class="set">
+      <div class="lab">Finisher + étirements</div>
+      <label class="switch"><input type="checkbox" id="finish" checked onchange="recalc()"><span></span></label>
+    </div>
+    <div class="set">
+      <div class="lab">Bips sonores</div>
+      <label class="switch"><input type="checkbox" id="sound" checked></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Circuit principal</h2>
+    <div class="exlist" id="exlist"></div>
+  </div>
+</div>
+
+<!-- ======= PLAYER ======= -->
+<div id="player">
+  <div class="ptop">
+    <span class="chip" id="chip">Échauffement</span>
+    <span class="rl" id="roundLbl"></span>
+    <button class="quit" onclick="quit()" title="Quitter">✕</button>
+  </div>
+
+  <div class="stage-wrap" id="stageWrap">
+    <div class="media">
+      <iframe id="ytf" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+      <div class="scene"><div class="stage" id="stage">
+        <div class="fig" id="fig">
+          <div class="head"></div><div class="torso"></div>
+          <div class="armL"></div><div class="armR"></div>
+          <div class="legL"></div><div class="legR"></div>
+        </div>
+      </div></div>
+      <div class="cd" id="count">0</div>
+      <button class="mtoggle" id="mtoggle" onclick="toggleMedia()">📺</button>
+      <a class="ytlink" id="ytlink" target="_blank" rel="noopener">YouTube ↗</a>
+    </div>
+
+    <div class="now"><div class="nm" id="exName">—</div><div class="tg" id="exTarget"></div></div>
+    <div class="next" id="nextUp"></div>
+
+    <div class="tbar"><i id="tbar"></i></div>
+    <div class="pbar"><i id="pbar" style="width:0%"></i></div>
+    <div class="ctrls">
+      <button class="nav" onclick="goPrev()">⏮</button>
+      <button class="play" id="playBtn" onclick="togglePlay()">⏸</button>
+      <button class="nav" onclick="goNext()">⏭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- VIDÉOS DE DÉMO (YouTube) ---------- */
+const YT = {
+  jumpingjacks:'6zi5Olw5BYQ',
+  squat:'P-yaD24bUE8',
+  pushup:'WDIpL0pjun0',
+  burpee:'qLBImHhCXSw',
+  lunge:'_GqxkGp7NAA',
+  mountain:'5NeRyDGAT_M',
+  superman:'LZoWdePF1NQ',
+  plank:'mwlp75MS6Rg',
+  armcircle:null, shadowbox:null, stretch:null
+};
+
+/* ---------- PROGRAMME ---------- */
+const WARMUP = [
+  {nm:'Jumping jacks',   tg:'1 min · ou course sur place', dur:60, a:'jumpingjacks'},
+  {nm:'Squats lents',    tg:'10 reps · corps vide',        dur:40, a:'squat'},
+  {nm:'Pompes lentes',   tg:'8 reps · genoux si besoin',   dur:40, a:'pushup', floor:1},
+  {nm:'Cercles de bras', tg:'30s + rotation hanches',      dur:50, a:'armcircle'},
+  {nm:'Fentes marchées', tg:'good mornings sans poids',    dur:60, a:'lunge'},
+];
+const CIRCUIT = [
+  {nm:'Burpees',           tg:'8-10 reps',      dur:40, a:'burpee'},
+  {nm:'Pompes',            tg:'10-15 reps',     dur:38, a:'pushup',   floor:1},
+  {nm:'Squats',            tg:'15-20 reps',     dur:42, a:'squat'},
+  {nm:'Fentes marchées',   tg:'10 / jambe',     dur:42, a:'lunge'},
+  {nm:'Mountain climbers', tg:'30-40 secondes', dur:35, a:'mountain', floor:1},
+  {nm:'Superman',          tg:'12-15 reps',     dur:32, a:'superman', floor:1},
+  {nm:'Planche',           tg:'30-60 secondes', dur:45, a:'plank',    floor:1},
+];
+const FINISH = [
+  {nm:'Shadow boxing', tg:'léger · ou high knees',                    dur:90, a:'shadowbox'},
+  {nm:'Étirements',    tg:'quad · ischio · pecs · épaules · hanches', dur:90, a:'stretch'},
+];
+
+/* ---------- SETTINGS ---------- */
+const DEF = {rounds:4, restEx:30, restRd:75, warm:true, finish:true, sound:true, media:'video'};
+let S = load();
+function load(){ try{return {...DEF,...JSON.parse(localStorage.getItem('fc')||'{}')}}catch(e){return {...DEF}} }
+function save(){ localStorage.setItem('fc',JSON.stringify(S)) }
+
+function syncUI(){
+  vRounds.textContent=S.rounds; restEx.value=S.restEx; restRd.value=S.restRd;
+  vRestEx.textContent=S.restEx+'s'; vRestRd.textContent=S.restRd+'s';
+  warm.checked=S.warm; finish.checked=S.finish; sound.checked=S.sound;
+}
+function bump(d){ S.rounds=Math.max(1,Math.min(8,S.rounds+d)); save(); syncUI(); recalc(); }
+function onRange(){ S.restEx=+restEx.value; S.restRd=+restRd.value; save(); syncUI(); recalc(); }
+
+/* ---------- BUILD STEPS ---------- */
+function buildSteps(){
+  S.warm=warm.checked; S.finish=finish.checked; S.sound=sound.checked; save();
+  const steps=[{kind:'go',dur:5}];
+  if(S.warm){
+    WARMUP.forEach((e,i)=>{ steps.push({kind:'work',phase:'Échauffement',e});
+      if(i<WARMUP.length-1) steps.push({kind:'rest',dur:8,next:WARMUP[i+1]}); });
+    steps.push({kind:'rest',dur:15,phase:'Prêt ?',next:CIRCUIT[0]});
+  }
+  for(let r=1;r<=S.rounds;r++){
+    CIRCUIT.forEach((e,i)=>{ steps.push({kind:'work',phase:'circuit',round:r,e});
+      const last=i===CIRCUIT.length-1;
+      if(last){ if(r<S.rounds) steps.push({kind:'rest',dur:S.restRd,next:CIRCUIT[0],roundDone:r}); }
+      else steps.push({kind:'rest',dur:S.restEx,round:r,next:CIRCUIT[i+1]}); });
+  }
+  if(S.finish){
+    steps.push({kind:'rest',dur:12,phase:'Finisher',next:FINISH[0]});
+    FINISH.forEach((e,i)=>{ steps.push({kind:'work',phase:'Finisher',e});
+      if(i<FINISH.length-1) steps.push({kind:'rest',dur:10,next:FINISH[i+1]}); });
+  }
+  steps.push({kind:'done'});
+  return steps;
+}
+function totalSeconds(){ return buildSteps().reduce((s,x)=>s+(x.dur||0),0); }
+function recalc(){
+  const m=Math.round(totalSeconds()/60);
+  estTime.textContent=m+' min';
+  estDesc.textContent=(warm.checked?'avec échauffement':'sans échauffement')+' · '+S.rounds+' tours';
+}
+
+/* ---------- ENGINE ---------- */
+let steps=[], idx=0, rem=0, dur=0, running=false, tid=null, wake=null;
+const $=id=>document.getElementById(id);
+
+function startWorkout(){ steps=buildSteps(); idx=0; document.body.classList.add('run'); requestWake(); loadStep(0); play(); }
+
+function ytEmbed(id){ return 'https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&mute=1&loop=1&playlist='+id+'&controls=1&rel=0&playsinline=1&modestbranding=1'; }
+function setFig(e){ $('fig').className='fig'+(e?' ex-'+e.a:''); $('stage').className='stage'+(e&&e.floor?' floor':''); }
+function clearVideo(){ $('ytf').src=''; $('ytf').style.display='none'; $('scene')&&($('scene').style.display='block'); }
+
+function showMedia(e, isWork){
+  const sc=document.querySelector('.scene');
+  const id = e?YT[e.a]:null;
+  if(isWork && S.media==='video' && id){
+    sc.style.display='none';
+    $('ytf').style.display='block'; $('ytf').src=ytEmbed(id);
+    $('mtoggle').textContent='🏃'; $('mtoggle').style.display='block';
+    $('ytlink').style.display='block'; $('ytlink').href='https://youtu.be/'+id;
+  } else {
+    $('ytf').src=''; $('ytf').style.display='none';
+    sc.style.display='block'; setFig(e);
+    $('mtoggle').textContent = id?'📺':'🔎';
+    $('mtoggle').style.display = isWork?'block':'none';
+    $('ytlink').style.display='block';
+    $('ytlink').href = id ? 'https://youtu.be/'+id : 'https://www.youtube.com/results?search_query='+encodeURIComponent((e?e.nm:'')+' exercice technique');
+  }
+}
+function toggleMedia(){
+  S.media = S.media==='video'?'anim':'video'; save();
+  const st=steps[idx]; if(st&&st.kind==='work') showMedia(st.e,true);
+}
+
+function loadStep(i){
+  idx=i; const st=steps[i];
+  if(st.kind==='done'){ finishWorkout(); return; }
+  setAccent(st.kind==='work'||st.kind==='go'?'work':'rest');
+
+  if(st.kind==='go'){
+    dur=st.dur; chip.textContent="C'est parti"; roundLbl.textContent='Prépare-toi';
+    exName.textContent='En position…'; exTarget.textContent=''; nextUp.innerHTML='';
+    showMedia(CIRCUIT[0],false); $('mtoggle').style.display='none';
+  } else if(st.kind==='work'){
+    dur=st.e.dur;
+    chip.textContent = st.phase==='circuit'?'Circuit':st.phase;
+    roundLbl.textContent = st.round?'Tour '+st.round+' / '+S.rounds:'';
+    exName.textContent=st.e.nm; exTarget.textContent=st.e.tg;
+    const nx=findNext(i); nextUp.innerHTML = nx?'Ensuite : <b>'+nx.nm+'</b>':'';
+    showMedia(st.e,true);
+  } else {
+    dur=st.dur; chip.textContent='Repos';
+    roundLbl.textContent = st.roundDone?'Tour '+st.roundDone+' terminé 🔥':(st.round?'Tour '+st.round+' / '+S.rounds:(st.phase||''));
+    exName.textContent='Récupération'; exTarget.textContent='';
+    nextUp.innerHTML = st.next?'À suivre : <b>'+st.next.nm+'</b> — '+st.next.tg:'';
+    showMedia(st.next,false);
+  }
+  rem=dur; $('count').textContent=fmt(rem); updateBar(); progress();
+}
+function findNext(i){ for(let k=i+1;k<steps.length;k++) if(steps[k].kind==='work') return steps[k].e; return null; }
+
+function tick(){
+  rem--;
+  if(rem<=0){ beep(660,160); if(idx+1<steps.length) loadStep(idx+1); else finishWorkout(); return; }
+  if(rem<=3) beep(880,90);
+  $('count').textContent=fmt(rem); updateBar();
+}
+function updateBar(){ $('tbar').style.background='var(--accent)'; $('tbar').style.width=(dur>0?rem/dur*100:0)+'%'; }
+function progress(){
+  let done=0,tot=0;
+  steps.forEach((s,k)=>{ if(s.dur){ tot+=s.dur; if(k<idx) done+=s.dur; } });
+  if(steps[idx]&&steps[idx].dur) done+=(dur-rem);
+  $('pbar').style.width=(tot?Math.min(100,done/tot*100):0)+'%';
+}
+let pInt=setInterval(progress,500);
+
+function play(){ if(running)return; running=true; playBtn.textContent='⏸'; tid=setInterval(tick,1000); requestWake(); }
+function pause(){ running=false; playBtn.textContent='▶'; clearInterval(tid); }
+function togglePlay(){ running?pause():play(); }
+function goNext(){ if(idx+1<steps.length) loadStep(idx+1); }
+function goPrev(){ if(rem<dur-1) loadStep(idx); else if(idx>0) loadStep(idx-1); }
+
+function finishWorkout(){
+  pause(); clearInterval(pInt); releaseWake(); clearVideo();
+  beep(523,150); setTimeout(()=>beep(659,150),160); setTimeout(()=>beep(784,260),330);
+  $('stageWrap').innerHTML='<div class="done"><div class="em">💪</div><h2>Séance terminée !</h2>'
+    +'<p>Bien joué. Hydrate-toi, mange tes protéines, dors.</p>'
+    +'<button class="btn" onclick="quit()">Retour</button></div>';
+  chip.textContent='Terminé'; roundLbl.textContent='';
+}
+function quit(){ $('ytf').src=''; location.reload(); }
+
+/* ---------- helpers ---------- */
+function setAccent(mode){
+  document.body.classList.toggle('resting',mode==='rest');
+  document.documentElement.style.setProperty('--accent',mode==='rest'?'var(--rest)':'var(--work)');
+}
+function fmt(s){ if(s>=60){const m=Math.floor(s/60);return m+':'+String(s%60).padStart(2,'0');} return s; }
+
+let ac=null;
+function beep(freq,ms){ if(!S.sound)return;
+  try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.frequency.value=freq;o.type='sine';o.connect(g);g.connect(ac.destination);
+    g.gain.setValueAtTime(.001,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.3,ac.currentTime+.01);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+ms/1000);
+    o.start();o.stop(ac.currentTime+ms/1000);
+  }catch(e){}
+}
+async function requestWake(){ try{ if('wakeLock' in navigator && !wake){ wake=await navigator.wakeLock.request('screen'); wake.addEventListener('release',()=>wake=null);} }catch(e){} }
+function releaseWake(){ try{ wake&&wake.release(); wake=null; }catch(e){} }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&running) requestWake(); });
+
+/* ---------- init ---------- */
+function renderExList(){
+  $('exlist').innerHTML=CIRCUIT.map(e=>
+    `<div class="exrow"><div><div class="nm">${e.nm}</div><div class="tg">${e.tg}</div></div><span class="tag">${e.dur}s</span></div>`).join('');
+}
+syncUI(); renderExList(); recalc();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
